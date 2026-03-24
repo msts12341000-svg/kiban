@@ -1,0 +1,45 @@
+name: 朝のルーティン
+
+on:
+  schedule:
+    # 毎朝 8:00 JST (= 23:00 UTC 前日)
+    - cron: '0 23 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  morning-routine:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python 依存関係インストール
+        run: pip install requests python-dotenv
+
+      - name: 今日の投稿素材を検知 (daily-routine.js)
+        run: node scripts/daily-routine.js
+
+      - name: daily-briefing.md の変更をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/daily-briefing.md
+          git diff --staged --quiet || git commit -m "chore: daily-briefing.md を自動更新 $(date '+%Y-%m-%d')"
+          git push
+
+      - name: アカウントデータを取得 (check_account.py)
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        run: python scripts/check_account.py

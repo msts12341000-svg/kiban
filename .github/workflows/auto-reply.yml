@@ -1,0 +1,36 @@
+name: 自動返信 (AutoReplyThreads)
+
+on:
+  schedule:
+    # JST 12:00〜23:00 毎時 (= UTC 3〜14時)
+    - cron: '0 3-14 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  auto-reply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 自動返信実行
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_ENV: production
+        run: node scripts/auto-reply.js
+
+      - name: replied-comments.json をコミット（返信済みID永続化）
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/replied-comments.json
+          git diff --staged --quiet || git commit -m "chore: replied-comments.json を自動更新 $(date '+%Y-%m-%d %H:%M')"
+          git push

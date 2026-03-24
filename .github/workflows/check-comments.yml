@@ -1,0 +1,29 @@
+name: コメントチェック
+
+on:
+  schedule:
+    # JST 12:00, 15:00, 18:00, 21:00 (= UTC 3, 6, 9, 12)
+    - cron: '0 3,6,9,12 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  check-comments:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python 依存関係インストール
+        run: pip install requests python-dotenv
+
+      - name: コメントチェック実行
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        run: python scripts/check_comments.py
