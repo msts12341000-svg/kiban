@@ -1,0 +1,33 @@
+name: 夜のルーティン
+
+on:
+  schedule:
+    # 毎晩 21:00 JST (= 12:00 UTC)
+    - cron: '0 12 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  evening-routine:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # git push に必要
+
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 夜のルーティン実行
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+          NODE_ENV: production
+          GITHUB_ACTIONS: 'true'
+        run: node scripts/night-routine.js
